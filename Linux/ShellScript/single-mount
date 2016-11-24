@@ -1,5 +1,5 @@
 #!/bin/bash
-# PowerBy xuwulin
+# 
 # 2016.05.10 Ver 1.1.2
 objname=`echo $1 | awk -F "/" '{print $NF}' | awk -F "." '{print $1}'`
 base=/mnt
