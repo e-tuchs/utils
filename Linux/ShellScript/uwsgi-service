@@ -1,0 +1,85 @@
+#!/bin/bash
+# chkconfig:   - 85 15
+# processname: uwsgi
+# config:      /etc/sysconfig/uwsgi
+# pidfile:    /var/run/uwsgi.pid
+#
+### BEGIN INIT INFO
+# Provides: uwsgi
+# Default-Start: 2 3 4 5
+# Short-Description: start and stop uwsgi
+### END INIT INFO
+
+# Source function library
+. /etc/rc.d/init.d/functions
+if [ -L $0 ]; then
+    initscript=`/bin/readlink -f $0`
+else
+    initscript=$0
+fi
+
+sysconfig=`/bin/basename $initscript`
+
+if [ -f /etc/sysconfig/$sysconfig ]; then
+    . /etc/sysconfig/$sysconfig
+fi
+
+cfgfile=/var/app/enabled/service/uwsgi.xml
+uwsgi=`which uwsgi`
+prog=`/bin/basename $uwsgi`
+lockfile=${LOCKFILE-/var/lock/subsys/uwsgi}
+pidfile=${PIDFILE-/var/run/uwsgi.pid}
+RETVAL=0
+
+start() {
+    echo -n $"Starting $prog: "
+    ${uwsgi} --pidfile ${pidfile} -x ${cfgfile} --uid estore 
+    RETVAL=$?
+    echo
+    [ $RETVAL = 0 ] && touch ${lockfile}
+    return $RETVAL
+}
+
+stop() {
+    echo -n $"Stopping $prog: "
+    ${uwsgi} --stop ${pidfile}
+    RETVAL=$?
+    echo
+    [ $RETVAL = 0 ] && rm -rf ${lockfile} ${pidfile}
+}
+
+reload() {
+    echo -n $"Reloading $prog" 
+    ${uwsgi} --reload ${pidfile}
+    RETVAL=$?
+    echo
+}
+
+rh_status() {
+    status -p ${pidfile} ${uwsgi}
+}
+
+case "$1" in
+  start)
+        start
+        ;;
+  stop)
+        stop
+        ;;
+  reload)
+        reload
+        ;;
+  restart)
+        stop
+        start
+        ;;
+  status)  
+        rh_status
+        RETVAL=$?
+        ;;
+  *)  
+        echo $"Usage: $prog {start|stop|restart|reload|status}"
+        RETVAL=2   
+esac
+
+exit $RETVAL
