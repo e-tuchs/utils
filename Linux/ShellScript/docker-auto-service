@@ -1,0 +1,50 @@
+#!/bin/bash
+# chkconfig:   - 85 15
+# description: uWSGI is a program to run applications adhering to the
+#              Web Server Gateway Interface.
+# processname: uwsgi
+# config:      /etc/sysconfig/uwsgi
+# pidfile:    /var/run/uwsgi.pid
+#
+### BEGIN INIT INFO
+# Provides: uwsgi
+# Required-Start: $local_fs $remote_fs $network
+# Required-Stop: $local_fs $remote_fs $network
+# Default-Start: 2 3 4 5
+# Short-Description: start and stop uwsgi
+### END INIT INFO
+
+# Source function library
+. /etc/rc.d/init.d/functions
+if [ -L $0 ]; then
+    initscript=`/bin/readlink -f $0`
+else
+    initscript=$0
+fi
+
+sysconfig=`/bin/basename $initscript`
+
+if [ -f /etc/sysconfig/$sysconfig ]; then
+    . /etc/sysconfig/$sysconfig
+fi
+dockermgr=`which docker-auto-start`
+prog=`/bin/basename $dockermgr`
+RETVAL=0
+
+start() {
+    echo -n $"Starting $prog: "
+    ${dockermgr} >> /tmp/docker_auto_start.log 
+    RETVAL=$?
+    echo
+    return $RETVAL
+}
+case "$1" in
+  start)
+        start
+        ;;
+  *)  
+        echo $"Usage: $prog {start}"
+        RETVAL=2   
+esac
+
+exit $RETVAL
