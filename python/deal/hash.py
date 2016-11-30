@@ -1,12 +1,8 @@
 # -*- coding: utf-8 -*-
 import logging
-import urllib2
 from hashlib import md5
 from Crypto.Cipher import AES
-
-KEY = '1234567887654321'
-MODE = AES.MODE_ECB
-APPEND_KEY = "0"
+from functools import wraps
 
 
 def mk_md5(obj, isbuff=True):
@@ -26,11 +22,12 @@ def mk_md5(obj, isbuff=True):
 
 
 class AESFactory(object):
-    key, mode = None, None
+    key, mode, append_str = None, None, None
 
-    def __init__(self, key=KEY, mode=MODE):
+    def __init__(self, key, mode, append_str):
         self.key = key
         self.mode = mode
+        self.append_str = append_str
 
     def encrypt(self, cleartext):
         """
@@ -41,7 +38,7 @@ class AESFactory(object):
         try:
             text_len = len(cleartext)
             append_len = 16-text_len if text_len <= 16 else 16-divmod(text_len, 16)[1]
-            append_str = APPEND_KEY*append_len
+            append_str = self.append_str*append_len
             text = cleartext+append_str
             ciphertext = encryptor.encrypt(text)
         except ValueError, e:
@@ -60,8 +57,31 @@ class AESFactory(object):
         else:
             return plain
 
-aes = AESFactory(key=KEY, mode=MODE)
-cipher = aes.encrypt('0123456789abcdef')
-print cipher
-clear = aes.decrypt(ciphertext=cipher)
-print clear
+
+def decrypt_response(key_mode):
+    """
+    :param key_mode:{"KEY": keystr, "MODE": aesmod eg:ECB, 'METHOD': POST or GET, "REPLACE": replace_str, eg:"@"}
+    :return:
+    """
+    def decorator(func):
+        def inner(request, *args, **kwargs):
+            try:
+                _raw = request.raw_post_data
+                _aes = AESFactory(key=key_mode['KEY'], mode=key_mode['MODE'], append_str=key_mode['REPLACE'])
+                _text = _aes.decrypt(ciphertext=_raw)
+                _repstr = key_mode['REPLACE']
+                cleartext = _text.replace(_repstr, '')
+            except Exception, e:
+                logging.error(e)
+                return {"status": 400, "detail": "decrypt error"}
+            else:
+                _dict = {}
+                for rq in cleartext.split('&'):
+                    _dict[rq.split('=')[0]] = rq.split('=')[1]
+                if key_mode['METHOD'] == 'POST':
+                    request.POST = dict(request.POST, **_dict)
+                else:
+                    request.GET = dict(request.GET, **_dict)
+            return func(request, *args, **kwargs)
+        return wraps(func, )(inner)
+    return decorator
