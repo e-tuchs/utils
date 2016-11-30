@@ -38,8 +38,7 @@ class AESFactory(object):
         try:
             text_len = len(cleartext)
             append_len = 16-text_len if text_len <= 16 else 16-divmod(text_len, 16)[1]
-            append_str = self.append_str*append_len
-            text = cleartext+append_str
+            text = cleartext+self.append_str*append_len
             ciphertext = encryptor.encrypt(text)
         except ValueError, e:
             logging.error("AES_encrypt:"+str(e))
