@@ -71,13 +71,13 @@ def decrypt_response(key_mode):
                 _text = _aes.decrypt(ciphertext=_raw)
                 _repstr = key_mode['REPLACE']
                 cleartext = _text.replace(_repstr, '')
+                _dict = {}
+                for rq in cleartext.split('&'):
+                    _dict[rq.split('=')[0]] = rq.split('=')[1]
             except Exception, e:
                 logging.error(e)
                 return {"status": 400, "detail": "decrypt error"}
             else:
-                _dict = {}
-                for rq in cleartext.split('&'):
-                    _dict[rq.split('=')[0]] = rq.split('=')[1]
                 if key_mode['METHOD'] == 'POST':
                     request.POST = dict(request.POST, **_dict)
                 else:
