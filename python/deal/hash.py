@@ -57,9 +57,9 @@ class AESFactory(object):
             return plain
 
 
-def decrypt_response(key_mode):
+def decrypt_aes_response(key_mode):
     """
-    :param key_mode:{"KEY": keystr, "MODE": aesmod eg:ECB, 'METHOD': POST or GET, "REPLACE": replace_str, eg:"@"}
+    :param key_mode:{"KEY": keystr, "MODE": aesmod eg:ECB, "REPLACE": replace_str, eg:"@"}
     :return:
     """
     def decorator(func):
@@ -69,18 +69,16 @@ def decrypt_response(key_mode):
                 _aes = AESFactory(key=key_mode['KEY'], mode=key_mode['MODE'], append_str=key_mode['REPLACE'])
                 _text = _aes.decrypt(ciphertext=_raw)
                 _repstr = key_mode['REPLACE']
-                cleartext = _text.replace(_repstr, '')
+                _cleartext = _text.replace(_repstr, '')
                 _dict = {}
-                for rq in cleartext.split('&'):
+                for rq in _cleartext.split('&'):
                     _dict[rq.split('=')[0]] = rq.split('=')[1]
             except Exception, e:
                 logging.error(e)
                 return {"status": 400, "detail": "decrypt error"}
             else:
-                if key_mode['METHOD'] == 'POST':
-                    request.POST = dict(request.POST, **_dict)
-                else:
-                    request.GET = dict(request.GET, **_dict)
+                setattr(request, 'AES_DATA', _dict)
             return func(request, *args, **kwargs)
         return wraps(func, )(inner)
     return decorator
+
