@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
-import logging
+import json
 import urllib2
-data=''
-url = 'http://127.0.0.1:80/api/test.json'
-req = urllib2.Request(
-    url=url,
-    data=data,
-    headers={'Content-Type': 'text/xml; charset=utf-8'})
-response = urllib2.urlopen(req)
-print type(response)
-print response.read()
+
+DEF_HEAD = {'Content-Type': 'application/json; charset=utf-8'}
+
+
+def post_data(req_url, req_data, headers=DEF_HEAD):
+    req = urllib2.Request(url=req_url, data=json.dumps(req_data), headers=headers)
+    response = urllib2.urlopen(req)
+    msg_resp = response.read()
+    return msg_resp
