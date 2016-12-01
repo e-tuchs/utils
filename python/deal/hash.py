@@ -60,7 +60,7 @@ class AESFactory(object):
 
 def decrypt_aes_response(key_mode):
     """
-    :param key_mode:{"KEY": keystr, "MODE": aesmod eg:ECB, "REPLACE": replace_str, eg:"@"}
+    :param key_mode:{"KEY": keystr, "MODE": aesmod eg:ECB, "REPLACE": replace_str, eg:"\0"}
     :return:
     """
     def decorator(func):
