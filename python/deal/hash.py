@@ -3,6 +3,7 @@ import logging
 from hashlib import md5
 from Crypto.Cipher import AES
 from functools import wraps
+from binascii import b2a_hex, a2b_hex
 
 
 def mk_md5(obj, isbuff=True):
@@ -34,7 +35,7 @@ class AESFactory(object):
         :param cleartext:  input clear text
         :return: encrypted text
         """
-        encryptor = AES.new(self.key, self.mode, b'0000000000000000')
+        encryptor = AES.new(self.key, self.mode,)
         try:
             text_len = len(cleartext)
             append_len = 16-text_len if text_len <= 16 else 16-divmod(text_len, 16)[1]
@@ -44,12 +45,12 @@ class AESFactory(object):
             logging.error("AES_encrypt:"+str(e))
             return None
         else:
-            return ciphertext
+            return b2a_hex(ciphertext)
 
     def decrypt(self, ciphertext):
-        decryptor = AES.new(self.key, self.mode, b'0000000000000000')
+        decryptor = AES.new(self.key, self.mode, )
         try:
-            plain = decryptor.decrypt(ciphertext)
+            plain = decryptor.decrypt(a2b_hex(ciphertext))
         except ValueError, e:
             logging.error("AES_decrypt:"+str(e))
             return None
@@ -81,4 +82,3 @@ def decrypt_aes_response(key_mode):
             return func(request, *args, **kwargs)
         return wraps(func, )(inner)
     return decorator
-
