@@ -1,0 +1,38 @@
+    aggre_cond = [
+        {"$group":
+             {"_id":
+                  {
+                      "name": "$name",
+                      "id": "$id",
+                      "desc": "$description",
+                      "icon_url": "$icon_url",
+                      "p_cate": "$parent_category_id",
+                      "order": "$order",
+                  }
+             }
+        },
+        {"$sort": {"_id.order": 1}},
+        {"$group": {
+            "_id": "$_id.p_cate",
+            "content": {
+                "$push": {
+                    "name": "$_id.name",
+                    "id": "$_id.id",
+                    "icon_url": "$_id.icon_url",
+                    "desc": "$_id.desc",
+                    "order": "$_id.order",
+                },
+            },
+        }}
+    ]
+    aggre2 = [
+        {
+            "$lookup":
+                {
+                    "from": "categories",
+                    "localField": "id",
+                    "foreignField": "parent_category_id",
+                    "as": "content",
+                }
+        }
+    ]
