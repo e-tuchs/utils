@@ -24,7 +24,7 @@ if [ -f /etc/sysconfig/$sysconfig ]; then
     . /etc/sysconfig/$sysconfig
 fi
 
-cfgfile=/var/app/enabled/service/uwsgi.xml
+cfgfile=/path/uwsgi.xml
 uwsgi=`which uwsgi`
 prog=`/bin/basename $uwsgi`
 lockfile=${LOCKFILE-/var/lock/subsys/uwsgi}
@@ -33,7 +33,7 @@ RETVAL=0
 
 start() {
     echo -n $"Starting $prog: "
-    ${uwsgi} --pidfile ${pidfile} -x ${cfgfile} --uid estore 
+    ${uwsgi} --pidfile ${pidfile} -x ${cfgfile} --uid uwsgi 
     RETVAL=$?
     echo
     [ $RETVAL = 0 ] && touch ${lockfile}
