@@ -3,7 +3,7 @@
 # 2016.11.25 ver 0.0.1
 
 cfgfile=/etc/docker.lst
-srvname=estore-service
+srvname=manaul-service
 base=/mnt
 s_mount=`which single-mount`
 if [ ! -f $cfgfile ]; then
