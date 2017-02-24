@@ -1,0 +1,80 @@
+#!/bin/bash
+# PowerBy xuwulin
+# 2016.05.10 ver 1.1.2
+#objname=`echo $1 | awk -F "." '{print $1}' | awk -F "/" '{print $NF}'`
+objname=`echo $1 | awk -F "/" '{print $NF}' | awk -F "." '{print $1}'`
+base=/mnt
+extend='tmp'
+base_img=/home/img/dev-64.img
+mountdir=$base/$extend/$objname
+aufsdir=$base/$objname
+EXISTS=`df -hP | grep  $aufsdir/`
+if [ $# -eq 0 ]; then
+  echo "Use age: persistence-mount target.img"
+  echo "Power By xwl Ver(1.1.2)"
+  exit 1
+fi
+if [ ! -f $1 ]; then
+  echo "File not exists $1"
+  exit 1
+fi
+if [ ! -f $base_img ]; then
+  echo "Mother Image not exists $base_img"
+  exit 1
+fi
+if [  -n "$EXISTS" ]; then 
+    echo "Already mounted in $aufsdir, Use: 'Chroot $aufsdir' to use"
+    echo  -e "Mount Info:\n$EXISTS"
+    exit 1
+fi
+if [ ! -d "$mountdir" ]; then  
+  mkdir -p "$mountdir"
+  echo "Create dir $mountdir"
+fi
+if [ ! -d "$aufsdir" ]; then  
+  mkdir -p "$aufsdir"
+  echo "Create dir $aufsdir"
+fi
+if [ ! -d "/media/tpl" ]; then
+  mkdir -p "/media/tpl"
+  echo "Create dir /media/tpl"
+fi
+if [ ! -d "/media/tpl/root" ]; then
+  echo "Mount Base Template"
+  mount -o loop,rw,relatime $base_img /media/tpl
+fi
+mount -o loop,rw,relatime $1 $mountdir
+mount -t aufs -o br=$mountdir=rw:/media/tpl=ro none $aufsdir
+mount -t proc proc $aufsdir/proc
+mount -t sysfs sys $aufsdir/sys
+[ -e "/dev/fd" ] || ln -s /proc/self/fd /dev/
+[ -e "/dev/stdin" ] || ln -s /proc/self/fd/0 /dev/stdin
+[ -e "/dev/stdout" ] || ln -s /proc/self/fd/1 /dev/stdout
+[ -e "/dev/stderr" ] || ln -s /proc/self/fd/2 /dev/stderr
+mount -o bind /dev $aufsdir/dev
+mount -o "mode=0620,gid=5" -t devpts devpts $aufsdir/dev/pts
+mount -t tmpfs tmpfs $aufsdir/dev/shm
+mount -t tmpfs tmpfs $aufsdir/tmp
+mount -t tmpfs tmpfs $aufsdir/root
+mkdir -p $aufsdir/root/.ActiveState/
+cp $aufsdir/ActiveState.lic $aufsdir/root/.ActiveState/
+chmod 755 $aufsdir/var/run/dbus
+mkdir -p $aufsdir/var/run/dbus/system_bus_socket
+if [ ! -e "$aufsdir/dev/tty0" ]; then
+	ln -s /dev/null $aufsdir/dev/tty0
+	[ $? -eq 0 ] && echo "done1" || echo "fail1"
+else
+	echo "skip1"
+fi
+[ -d "$(grep -c " $aufsdir/dev/pts " /proc/mounts)" ] || mkdir -p $aufsdir/dev/pts
+chroot $aufsdir sh -c "dbus-uuidgen > /etc/machine-id"
+[ $? -eq 0 ] && echo "done2" || echo "fail2"
+[ -e "$aufsdir/var/run/dbus/pid" ] && rm $aufsdir/var/run/dbus/pid
+chroot $aufsdir dbus-daemon --system --fork
+while true; do
+    read -p "Do you need chroot to: $aufsdir now? Y/N  " yn
+    case $yn in
+        [Yy]* ) chroot $aufsdir;break;;
+        [Nn]* ) echo "Please use: 'sudo chroot $aufsdir' to entry new env if you want!";break;;
+    esac
+done
